@@ -38,13 +38,13 @@ RUN wget -qO - http://www.webmin.com/jcameron-key.asc | apt-key add - \
 RUN sed -i 's/port=10000/port=10001/g' /etc/webmin/miniserv.conf \
     && echo "allow=0.0.0.0/0" >> /etc/webmin/miniserv.conf
 
-# Compiler ttyd (terminal web)
+# Compiler ttyd
 RUN git clone https://github.com/tsl0922/ttyd.git /tmp/ttyd \
     && cd /tmp/ttyd && mkdir build && cd build \
     && cmake .. && make && make install \
     && rm -rf /tmp/ttyd
 
-# Config Nginx pour reverse proxy
+# Config Nginx
 RUN rm /etc/nginx/sites-enabled/default
 COPY nginx.conf /etc/nginx/sites-available/default
 RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
@@ -54,4 +54,6 @@ ENV PORT=10000
 EXPOSE 10000
 
 # Script de démarrage
-CMD service webmin start && nginx && ttyd -p 10002 -i 0.0.0.0 bash
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+CMD ["/entrypoint.sh"]
