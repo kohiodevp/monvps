@@ -1,7 +1,7 @@
 FROM debian:12-slim
 
-# Installer dépendances
-RUN apt-get update && apt-get install -y \
+# Installer dépendances de build et runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     git \
     build-essential \
@@ -23,11 +23,18 @@ RUN useradd -ms /bin/bash admin \
 RUN git clone https://github.com/tsl0922/ttyd.git /tmp/ttyd \
     && cd /tmp/ttyd && mkdir build && cd build \
     && cmake .. && make && make install \
-    && rm -rf /tmp/ttyd
+    && rm -rf /tmp/ttyd \
+    && apt-get remove -y git build-essential cmake pkg-config \
+    && apt-get autoremove -y \
+    && apt-get clean
 
-# Render impose $PORT
+# Render fournit le port via $PORT
 ENV PORT=10000
-EXPOSE 10000
+EXPOSE $PORT
 
-# Lancer ttyd
-CMD ["ttyd", "-p", "10000", "-i", "0.0.0.0", "bash"]
+# Passer à l'utilisateur non-root
+USER admin
+WORKDIR /home/admin
+
+# Lancer ttyd avec le port dynamique
+CMD ["sh", "-c", "ttyd -p $PORT -i 0.0.0.0 bash"]
